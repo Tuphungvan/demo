@@ -1,0 +1,43 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: job-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.interval.ms: 300000
+      max-poll-records: 100
+    listener:
+      type: batch
+      ack-mode: manual
+      async-acks: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/demo_db?currentSchema=job_schema
+    username: demo
+    password: demo
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: job_schema
+
+logging:
+  level:
+    com.pvt.identity: DEBUG

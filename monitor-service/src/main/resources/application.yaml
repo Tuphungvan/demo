@@ -1,0 +1,39 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: monitor-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.interval.ms: 300000
+      max-poll-records: 100
+      group-id: job-group
+    topics:
+      job-logs: job-logs
+
+    listener:
+      type: batch
+      ack-mode: manual
+      async-acks: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/demo_db?currentSchema=monitor_schema&reWriteBatchedInserts=true
+    username: demo
+    password: demo
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        default_schema: monitor_schema
+        order_updates: true
+        order_inserts: true
