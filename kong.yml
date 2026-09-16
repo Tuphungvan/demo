@@ -5,10 +5,19 @@ services:
   - name: job-service
     url: http://host.docker.internal:8081
     routes:
-      - name: job-route
+      - name: get-job-route
         paths:
           - /api/jobs
         strip_path: false
+        methods:
+          - GET
+
+      - name: create-job-route
+        paths:
+          - /api/jobs
+        strip_path: false
+        methods:
+          - POST
 
   # Worker Service (port 8082)
   - name: worker-service
@@ -27,3 +36,13 @@ services:
         paths:
           - /api/monitor
         strip_path: false
+
+plugins:
+  - name: rate-limiting
+    route: get-job-route
+    config:
+      minute: 5
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
