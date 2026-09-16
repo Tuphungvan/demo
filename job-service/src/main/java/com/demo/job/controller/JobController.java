@@ -28,7 +28,7 @@ public class JobController {
             HttpServletRequest req) {
 
         String clientIp = req.getHeader("X-Forwarded-For");
-        if (clientIp == null) clientIp = req.getRemoteAddr();
+        if (clientIp == null || clientIp.isBlank()) clientIp = req.getRemoteAddr();
         if (!rateLimiter.isAllowed(clientIp.split(",")[0].trim(), 2, 60))
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("API rate limit exceeded");
         Job job = jobService.createJob(name, subJobCount);
