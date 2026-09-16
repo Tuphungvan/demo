@@ -47,7 +47,7 @@ public class JobService {
                             .build(job.getJobId()))
                     .retrieve()
                     .toBodilessEntity();
-        } catch (Exception ex){
+        } catch (Exception ex) {
             jobRepo.updateStatusToFailed(job.getJobId());
             log.info("Worker không thể xử lý job {}, đánh dấu FAILED", job.getJobId(), ex);
             throw new RuntimeException("Giao việc cho worker thất bại", ex);
@@ -57,19 +57,38 @@ public class JobService {
     }
 
     @Transactional
-    public Job updateJob(Integer id){
+    public Job updateJob(Integer id) {
         jobRepo.updateStatusToDone(id);
         template.delete(key);
         return jobRepo.findById(id).orElseThrow(() -> new RuntimeException("job khong ton tai"));
     }
 
-    public List<Job> getJob(){
+    public List<Job> getJob() {
         String cache = template.opsForValue().get(key);
-        if(cache != null) return objectMapper.readValue(cache, new TypeReference<>() {});
-        List<Job> jobs = jobRepo.findAll();
-        String json = objectMapper.writeValueAsString(jobs);
-        template.opsForValue().set(key, json, Duration.ofMinutes(10));
-        return jobs;
+        if (cache != null) return objectMapper.readValue(cache, new TypeReference<>() {
+        });
+        while (true) {
+            Boolean lock = template.opsForValue().setIfAbsent("lock:job:all", "1", Duration.ofSeconds(5));
+            if (Boolean.TRUE.equals(lock)) {
+                try {
+                    String cacheCheck = template.opsForValue().get(key);
+                    if (cacheCheck != null) return objectMapper.readValue(cacheCheck, new TypeReference<>() {
+                    });
+                    List<Job> jobs = jobRepo.findAll();
+                    String json = objectMapper.writeValueAsString(jobs);
+                    template.opsForValue().set(key, json, Duration.ofMinutes(10));
+                    return jobs;
+                } finally {
+                    template.delete("lock:job:all");
+                }
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Thread bị ngắt khi chờ cache", e);
+            }
+        }
     }
 }
 
