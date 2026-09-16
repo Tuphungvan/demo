@@ -29,7 +29,7 @@ public class JobController {
 
         String clientIp = req.getHeader("X-Forwarded-For");
         if (clientIp == null) clientIp = req.getRemoteAddr();
-        if (!rateLimiter.isAllowed(clientIp, 2, 60))
+        if (!rateLimiter.isAllowed(clientIp.split(",")[0].trim(), 2, 60))
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("API rate limit exceeded");
         Job job = jobService.createJob(name, subJobCount);
         return ResponseEntity.ok(Map.of("message", "tạo job thành công, worker đang sử lý", "data", job));
